@@ -5,32 +5,28 @@ var mongoose = require('mongoose');
 
 var StudentSchema = new mongoose.Schema({
     //
-    Purview: { type: Number, default: 5 }, // 权限
+    Purview: Number, // 权限
     StudentName: String,   //名字
     Sex: String,    //性别
     Photo: String,  //头像
-    //Class: String,  //班级
+    Class: String,  //班级
     Number: String, //学号
     Phone:String,   //手机号码
     QQ:String,      //QQ
     Dorm: String,   //宿舍
     ID_card:String,  //身份证号
     Native:String,  //籍贯
-    Password: { type: String, default: "123" },  //密码
+    Password:String,  //密码
 
     IsSignIn: { type: Number, default: 0 },
 
     Classes:{type: mongoose.Schema.Types.ObjectId, ref: 'Class'},//嵌套班级
     Professions: {type: mongoose.Schema.Types.ObjectId, ref: 'Profession'},//嵌套专业
     Colleges: {type: mongoose.Schema.Types.ObjectId, ref: 'College'},//嵌套学院
-    //Sigins: [{type: mongoose.Schema.Types.ObjectId, ref: 'SignIn'}],
+    Sigins: [{type: mongoose.Schema.Types.ObjectId, ref: 'SignIn'}],
 
-    DeviceId: { type: String, default: "" },
-    WiFiSSID: { type: String, default: "" },
-
-    ClassTeacher: {type: mongoose.Schema.Types.ObjectId, ref: 'Teacher'},
-    FatherPhone: String,
-    MotherPhone: String
+    DeviceId: String,
+    WiFiSSID:String
 });
 
 mongoose.model('Student', StudentSchema);

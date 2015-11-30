@@ -5,9 +5,7 @@ var mongoose = require('mongoose');
 
 var ExcelSchema = new mongoose.Schema({
     ClassName: String,
-    Number: String,
-    Name: String,
-    Data: Array
+    Number: String
 });
 
 mongoose.model('Excel', ExcelSchema);

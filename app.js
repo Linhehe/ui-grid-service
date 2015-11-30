@@ -10,6 +10,14 @@ var users = require('./routes/users');
 
 var app = express();
 
+var multer = require('multer');
+app.use(multer({ dest: './public/files/',
+  rename: function (fieldname, filename, req) {
+    filename = req.body.TeacherId;
+    return filename;
+  }
+}));
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -26,7 +34,7 @@ app.all('*', function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "X-Requested-With");
   //
-  res.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, PUT');
+  res.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, PUT, DELETE');
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   next();
 });

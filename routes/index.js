@@ -13,7 +13,9 @@ var mongoose = require('mongoose');
 //    console.log('connect success');
 //  }
 //});
-mongoose.connect('mongodb://linhehe:hyg&1qaz2wSX@113.31.89.205:27017/school', function(err){
+//
+// mongodb://linhehe:hyg&1qaz2wSX@113.31.89.205:27017/school
+mongoose.connect('mongodb://linhehe:linhehe@113.31.89.205:27017/test', function(err){
   if(err){
     console.error(err);
   } else{
@@ -58,24 +60,24 @@ var BeginDay = new Date('2015-9-7');
 var ClassName = '15信管ERP3';
 var time = [
   {
-    "BeginWeek": 10,
-    "EndWeek": 18,
-    "BeginSubjectDate": '8:00',
-    "EndSubjectDate": '9:50',
-    "SubjectName": '心理健康教育',
-    "SubjectTeacher": '陶红丽',
-    "Build": 'J1',
-    "ClassRoom": '106',
+    "BeginWeek": 3,
+    "EndWeek": 16,
+    "BeginSubjectDate": '18:50',
+    "EndSubjectDate": '20:40',
+    "SubjectName": '实用会计基础',
+    "SubjectTeacher": '陈维',
+    "Build": 'J3',
+    "ClassRoom": '306',
     "TodayWeek": 0 // 星期1
   }
-]
+];
 //var ClassName = '14游戏软件1班';
 //var time =[
 //  {
 //    "BeginWeek": 2,
 //    "EndWeek": 13,
 //    "BeginSubjectDate": '8:00',
-//    "EndSubjectDate": '11:50',
+//    "EndSubjectDate": '10:55',
 //    "SubjectName": 'Android移动应用开发',
 //    "SubjectTeacher": '常亚平',
 //    "Build": 'S3',
@@ -106,7 +108,7 @@ var time = [
 //    "EndWeek": 19,
 //    "BeginSubjectDate": '18:50',
 //    "EndSubjectDate": '21:40',
-//    "SubjectName": 'iOS移动应用开发',
+//    "SubjectName": 'iOS移动应用开发项目实训',
 //    "SubjectTeacher": '胡玉贵',
 //    "Build": 'S3',
 //    "ClassRoom": '209',
@@ -156,7 +158,7 @@ var time = [
 //    "EndWeek": 19,
 //    "BeginSubjectDate": '8:00',
 //    "EndSubjectDate": '11:50',
-//    "SubjectName": 'iOS移动应用开发',
+//    "SubjectName": 'iOS移动应用开发项目实训',
 //    "SubjectTeacher": '胡玉贵',
 //    "Build": 'S3',
 //    "ClassRoom": '209',
@@ -346,19 +348,27 @@ router.get('/', function(req, res, next) {
 router.post('/ImportSignIn', function(req,res,next){
   //
   //console.log(req.body);
-  console.log(req.body);
+  var BeginDay = new Date(req.body.BeginDay);
+  //console.log(BeginDay);
+  //console.log(req.body);
   //
   async.each(req.body.time, function(item, callback) {
     //
     Class.findOne({"ClassName": {'$regex': req.body.ClassName}}, function(err,classes){
       //
-      console.log(item.BeginWeek+" ; "+item.EndWeek);
+      //console.log(item.BeginWeek+" ; "+item.EndWeek);
       //var BeginDay1 = BeginDay;
       for(var i=0; i<=(parseInt(item.EndWeek)-parseInt(item.BeginWeek)); i++){
-        var dd = new Date(BeginDay.getFullYear()+'-'+(BeginDay.getMonth()+1)+" "+item.BeginSubjectDate);
+        var dd = new Date(BeginDay.getFullYear()+'-'+(BeginDay.getMonth()+1)+"-"+BeginDay.getDate()+" "+item.BeginSubjectDate);
+        //console.error(dd);
         dd.setDate(BeginDay.getDate()+(parseInt(item.BeginWeek)-2+i)*7+(parseInt(item.TodayWeek)-1));
+        //console.log(BeginDay.getDate());
+        //console.error((parseInt(item.BeginWeek)-2+i)*7);
+        console.log(typeof parseInt(item.TodayWeek));
+        console.error(item.TodayWeek);
+        //console.error(new Date(dd));
         //
-        var ee = new Date(BeginDay.getFullYear()+'-'+(BeginDay.getMonth()+1)+" "+item.EndSubjectDate);
+        var ee = new Date(BeginDay.getFullYear()+'-'+(BeginDay.getMonth()+1)+"-"+BeginDay.getDate()+" "+item.EndSubjectDate);
         ee.setDate(BeginDay.getDate()+(parseInt(item.BeginWeek)-2+i)*7+(parseInt(item.TodayWeek)-1));
         //
         for(var j=0; j<classes.Students.length; j++){
@@ -376,7 +386,7 @@ router.post('/ImportSignIn', function(req,res,next){
             SecondSignInState: 0
           });
           console.log(signin);
-          //signin.save();
+          signin.save();
         }
       }
       callback();

@@ -15,7 +15,8 @@ var mongoose = require('mongoose');
 //});
 //
 // mongodb://linhehe:hyg&1qaz2wSX@113.31.89.205:27017/school
-mongoose.connect('mongodb://linhehe:linhehe@113.31.89.205:27017/test', function(err){
+// mongodb://linhehe:linhehe@113.31.89.205:27017/test
+mongoose.connect('mongodb://linhehe:hyg&1qaz2wSX@113.31.89.205:27017/school', function(err){
   if(err){
     console.error(err);
   } else{
@@ -352,13 +353,18 @@ router.post('/ImportSignIn', function(req,res,next){
   //console.log(BeginDay);
   //console.log(req.body);
   //
-  async.each(req.body.time, function(item, callback) {
+ async.each(req.body.time, function(item, callback1) {
     //
     Class.findOne({"ClassName": {'$regex': req.body.ClassName}}, function(err,classes){
       //
       //console.log(item.BeginWeek+" ; "+item.EndWeek);
       //var BeginDay1 = BeginDay;
-      for(var i=0; i<=(parseInt(item.EndWeek)-parseInt(item.BeginWeek)); i++){
+      var weeks=[];
+      for(var i=0; i<=(parseInt(item.EndWeek)-parseInt(item.BeginWeek)); i++)
+      {
+        weeks.push(i);
+      }
+      async.each(weeks,function(i,callback2){
         var dd = new Date(BeginDay.getFullYear()+'-'+(BeginDay.getMonth()+1)+"-"+BeginDay.getDate()+" "+item.BeginSubjectDate);
         //console.error(dd);
         dd.setDate(BeginDay.getDate()+(parseInt(item.BeginWeek)-2+i)*7+(parseInt(item.TodayWeek)-1));
@@ -371,9 +377,10 @@ router.post('/ImportSignIn', function(req,res,next){
         var ee = new Date(BeginDay.getFullYear()+'-'+(BeginDay.getMonth()+1)+"-"+BeginDay.getDate()+" "+item.EndSubjectDate);
         ee.setDate(BeginDay.getDate()+(parseInt(item.BeginWeek)-2+i)*7+(parseInt(item.TodayWeek)-1));
         //
-        for(var j=0; j<classes.Students.length; j++){
+        async.each(classes.Students,function(s,callback3){
+
           var signin = new SignIn({
-            StudentId: classes.Students[j],
+            StudentId: s,
             ClassId: classes._id,
             TeacherName: item.SubjectTeacher,
             SubjectName: item.SubjectName,
@@ -386,12 +393,23 @@ router.post('/ImportSignIn', function(req,res,next){
             SecondSignInState: 0
           });
           console.log(signin);
-          signin.save();
-        }
-      }
-      callback();
+          signin.save(function(error,doc){
+            //
+            console.log("name "+doc.StudentId)
+            callback3();
+            //
+          });
+        },function(err){
+          callback2()
+        });
+      },function(error){
+        callback1();
+      });
     });
-  });
+  },function(err){
+   console.log("findish");
+    res.jsonp("finish");
+ });
 });
 
 // 上传学生信息的Excel表格
@@ -612,6 +630,7 @@ router.get('/ViewProfession', function(req,res,next){
   College.findOne({_id: req.query.CollegeId})
       .populate('Professions')
       .exec(function(err,colleges){
+        if(err) next(err);
         res.json(colleges.Professions);
       });
 });
@@ -620,6 +639,7 @@ router.get('/ViewClasses', function(req,res,next){
   Profession.findOne({_id: req.query.ProfessionId})
       .populate('Classes')
       .exec(function(err,professions){
+        if(err) next(err);
         res.json(professions.Classes);
       });
 });
@@ -628,6 +648,7 @@ router.get('/ViewStudents', function(req,res,next){
   Class.findOne({_id: req.query.ClassId})
       .populate('Students')
       .exec(function(err,classes){
+        if(err) next(err);
         res.json(classes.Students);
       });
 });
@@ -684,13 +705,13 @@ router.post('/AddSubject', function(req,res,next){
   //});
 });
 // 删除课程
-router.delete('/DeleteSubject', function(req,res,next){
-  //
-});
+//router.delete('/DeleteSubject', function(req,res,next){
+//  //
+//});
 // 修改课程
-router.put('/UpdateSubject', function(req,res,next){
-  //
-});
+//router.put('/UpdateSubject', function(req,res,next){
+//  //
+//});
 
 //
 // 查询课程
@@ -846,22 +867,90 @@ router.put('/updateSignIn', function(req,res,next){
       });
 });
 
+router.get('/getClassProject', function(req,res,next){
+  SignIn.aggregate(
+    {$match:{"ClassId":mongoose.Types.ObjectId(req.query.ClassId)}},
+    {$group:{_id:{SubjectName:"$SubjectName",date:"$BeginSubjectDate",BeginSubjectDate:"$BeginSubjectDate",EndSubjectDate:"$EndSubjectDate",TeacherName:"$TeacherName"}}
+    },
+    {$group:{_id:{SubjectName:"$_id.SubjectName"}, my: {$push:{date:"$_id.BeginSubjectDate",BeginSubjectDate:"$_id.BeginSubjectDate",EndSubjectDate:"$_id.EndSubjectDate",TeacherName:"$_id.TeacherName"}}}}
+  , function(err,result){
+        if(err){
+          next(err);
+        } else{
+          res.json(result);
+        }
+      });
+});
 
-SignIn.aggregate([
-  {$match: {
-    ClassId : '55ed4d83100c389106ad7874'
-  }},
-  {$group: {
-    _id: { ClassId: "$ClassId", BeginSubjectDate: "$BeginSubjectDate", EndSubjectDate: "$EndSubjectDate" }
-  }}
-])
-    .exec(function(err,result){
-      if(err){
-        console.error(err);
-        return;
+router.delete('/deleteSubject', function(req,res,next){
+  SignIn.remove({ClassId: req.query.ClassId, BeginSubjectDate: new Date(req.query.BeginSubjectDate)}, function(err){
+    if(err){
+      next(err);
+    } else{
+      res.jsonp('delete finish');
+    }
+  });
+});
+
+router.get('/getProjectByProjectName', function(req,res,next){
+  SignIn.aggregate(
+    {$match:{"ClassId":mongoose.Types.ObjectId(req.query.ClassId), "SubjectName":req.query.SubjectName}},
+    {$group:{_id:{SubjectName:"$SubjectName",BeginSubjectDate:"$BeginSubjectDate",EndSubjectDate:"$EndSubjectDate"}}},
+    {$group:{_id:{SubjectName:"$_id.SubjectName"}, my:{$push:{BeginSubjectDate:"$_id.BeginSubjectDate",EndSubjectDate:"$_id.EndSubjectDate"}}}}
+  , function(err,result){
+        if(err){
+          next(err);
+        } else{
+          res.jsonp(result);
+        }
+      });
+});
+
+router.post('/addaNewSubject', function(req,res,next){
+  Class.findOne({_id: req.body.ClassId}, function(err,classes){
+    if(err){
+      next(err);
+    } else{
+      if(classes){
+        var stop_val = classes.Students.length;
+        for(var i=0; i<classes.Students.length; i++){
+          var sign = new SignIn({
+            StudentId: classes.Students[i],
+            ClassId: req.body.ClassId,
+            TeacherName: req.body.TeacherName,
+            SubjectName: req.body.SubjectName,
+            BeginSubjectDate: new Date(req.body.BeginSubjectDate), // 起始时间
+            EndSubjectDate: new Date(req.body.EndSubjectDate), // 结束时间
+            AddressName: req.body.AddressName, // 教学楼
+            ClassRoomName: req.body.ClassRoomName // 教室
+          });
+          sign.save();
+          if(i == stop_val){
+            console.log('finish');
+            res.jsonp('finish');
+          }
+        }
       }
-      console.log(result);
-    });
+    }
+  });
+});
+
+
+//SignIn.aggregate([
+//  {$match: {
+//    ClassId : '55ed4d83100c389106ad7874'
+//  }},
+//  {$group: {
+//    _id: { ClassId: "$ClassId", BeginSubjectDate: "$BeginSubjectDate", EndSubjectDate: "$EndSubjectDate" }
+//  }}
+//])
+//    .exec(function(err,result){
+//      if(err){
+//        console.error(err);
+//        return;
+//      }
+//      console.log(result);
+//    });
 
 
 //var date1 = new Date('2015-11-27 12:00');
